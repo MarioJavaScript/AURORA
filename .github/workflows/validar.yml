@@ -1,0 +1,28 @@
+name: Validar inventario
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Obtener código
+        uses: actions/checkout@v4
+      - name: Preparar configuración
+        run: cp .env.example .env
+      - name: Levantar servicios
+        run: docker compose up -d --build
+      - name: Validar servicios y datos
+        run: bash scripts/validar.sh
+      - name: Diagnóstico si falla
+        if: failure()
+        run: |
+          docker compose ps
+          docker compose logs --no-color
+      - name: Detener y limpiar
+        if: always()
+        run: docker compose down -v

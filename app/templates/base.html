@@ -1,0 +1,6 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ title|default('Inicio') }} · {{ config.APP_NAME }}</title><link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"></head>
+<body><header><div class="wrap nav"><a class="brand" href="{{ url_for('inicio') }}">{{ config.APP_NAME }}</a><nav><a href="{{ url_for('inicio') }}">Inicio</a><a href="{{ url_for('lista') }}">Equipos</a><a class="button" href="{{ url_for('nuevo') }}">Agregar equipo</a></nav></div></header>
+<main class="wrap">{% for message in get_flashed_messages() %}<p class="notice" role="status">{{ message }}</p>{% endfor %}{% block content %}{% endblock %}</main>
+<footer class="wrap">Proyecto académico · Empresa ficticia</footer></body></html>
