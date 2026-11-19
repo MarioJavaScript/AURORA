@@ -10,6 +10,7 @@ services:
         condition: service_healthy
     networks:
       - interna
+      - publica
     restart: unless-stopped
 
   app:
@@ -54,6 +55,8 @@ services:
     restart: unless-stopped
 
 networks:
+  publica:
+    driver: bridge
   interna:
     driver: bridge
     internal: true
