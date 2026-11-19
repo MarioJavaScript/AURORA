@@ -23,6 +23,7 @@ fi
 DB_USER=''
 DB_PASSWORD=''
 DB_NAME=''
+HTTP_PORT='80'
 while IFS='=' read -r key value || [[ -n "$key" ]]; do
   value="${value%$'\r'}"
   case "$value" in
@@ -33,6 +34,7 @@ while IFS='=' read -r key value || [[ -n "$key" ]]; do
     DB_USER) DB_USER="$value" ;;
     DB_PASSWORD) DB_PASSWORD="$value" ;;
     DB_NAME) DB_NAME="$value" ;;
+    HTTP_PORT) HTTP_PORT="$value" ;;
   esac
 done < .env
 
@@ -41,8 +43,14 @@ if [[ -z "$DB_USER" || -z "$DB_PASSWORD" || -z "$DB_NAME" ]]; then
   exit 1
 fi
 
+if [[ ! "$HTTP_PORT" =~ ^[0-9]+$ ]] || (( HTTP_PORT < 1 || HTTP_PORT > 65535 )); then
+  printf 'FALLA: HTTP_PORT debe ser un puerto válido.\n' >&2
+  exit 1
+fi
+base_url="http://localhost:$HTTP_PORT"
+
 health_ready() {
-  [[ "$(curl -sS -o /dev/null -w '%{http_code}' --max-time 3 http://localhost/salud 2>/dev/null || true)" == 200 ]]
+  [[ "$(curl -sS -o /dev/null -w '%{http_code}' --max-time 3 "$base_url/salud" 2>/dev/null || true)" == 200 ]]
 }
 
 start=$SECONDS
@@ -55,7 +63,7 @@ done
 check 'salud HTTP 200 (máximo 120 segundos)' health_ready
 
 home_ready() {
-  [[ "$(curl -sS -o /dev/null -w '%{http_code}' --max-time 3 http://localhost 2>/dev/null || true)" == 200 ]]
+  [[ "$(curl -sS -o /dev/null -w '%{http_code}' --max-time 3 "$base_url" 2>/dev/null || true)" == 200 ]]
 }
 check 'inicio HTTP 200' home_ready
 
@@ -75,14 +83,14 @@ no_host_port() {
   ports="$(docker inspect --format '{{json .NetworkSettings.Ports}}' "$container")" || return 1
   [[ "$ports" != *'HostPort'* ]]
 }
-nginx_port_80() {
+nginx_port() {
   local binding
   binding="$(docker compose port nginx 80)" || return 1
-  [[ "$binding" =~ :80$ ]]
+  [[ "$binding" == *":$HTTP_PORT" ]]
 }
 check 'app sin puerto publicado' no_host_port app
 check 'db sin puerto publicado' no_host_port db
-check 'nginx publica el puerto 80' nginx_port_80
+check "nginx publica el puerto $HTTP_PORT" nginx_port
 
 if (( failures > 0 )); then
   printf 'FALLA: %d comprobación(es) fallaron.\n' "$failures" >&2
