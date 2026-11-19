@@ -15,6 +15,7 @@ services:
 
   app:
     build: ./app
+    image: ${DOCKERHUB_USER:-centinela}/inventario-centinela:${APP_VERSION:-latest}
     environment:
       APP_NAME: ${APP_NAME}
       DB_HOST: db
